@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 class HomePage extends StatefulWidget {
@@ -14,12 +15,40 @@ class HomePageState extends State<HomePage> {
   final Completer<GoogleMapController> _mapController =
       Completer<GoogleMapController>();
 
-  final CameraPosition _kGooglePlex = CameraPosition(
-    target: LatLng(37.42796133580664, -122.085749655962),
-    zoom: 14.4746,
-  );
+  CameraPosition? _initialPosition;
 
   int _selectedIndex = 0;
+
+  Future<CameraPosition> _determinePosition() async {
+    final serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    if (!serviceEnabled) {
+      return Future.error('SERVICE_NOT_ENABLE');
+    }
+
+    final permission = await Geolocator.checkPermission();
+
+    if (permission == LocationPermission.denied) {
+      return Future.error('PERMISSION_LOCATION_DENIED');
+    }
+
+    final currentPosition = await Geolocator.getCurrentPosition();
+
+    final cameraPosition = CameraPosition(
+      target: LatLng(currentPosition.latitude, currentPosition.longitude),
+      zoom: 14,
+    );
+
+    _initialPosition = cameraPosition;
+
+    return cameraPosition;
+  }
+
+  @override
+  void initState() {
+    super.initState();
+
+    
+  }
 
   @override
   Widget build(BuildContext context) {
