@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 
@@ -11,11 +12,15 @@ class HomePage extends StatefulWidget {
   State<HomePage> createState() => HomePageState();
 }
 
-class HomePageState extends State<HomePage> {
+class HomePageState extends State<HomePage> with WidgetsBindingObserver {
   final Completer<GoogleMapController> _mapController =
       Completer<GoogleMapController>();
 
   CameraPosition? _initialPosition;
+
+  late String mapStyle;
+
+  late Future<CameraPosition> _positionFuture;
 
   int _selectedIndex = 0;
 
@@ -43,23 +48,89 @@ class HomePageState extends State<HomePage> {
     return cameraPosition;
   }
 
+  static const CameraPosition _kGooglePlex = CameraPosition(
+    target: LatLng(37.42796133580664, -122.085749655962),
+    zoom: 14.4746,
+  );
+
   @override
   void initState() {
     super.initState();
 
-    
+    WidgetsBinding.instance.addObserver(this);
+    _positionFuture = _determinePosition();
+    rootBundle
+        .loadString('assets/map/style.json')
+        .then((style) => mapStyle = style);
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+
+    if (state == AppLifecycleState.resumed) {
+      setState(() {});
+    }
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // body: GoogleMap(
-      //   mapType: MapType.normal,
-      //   initialCameraPosition: _kGooglePlex,
-      //   onMapCreated: (GoogleMapController controller) {
-      //     _mapController.complete(controller);
-      //   },
-      // ),
+      body: FutureBuilder(
+        builder: (_, snapshot) {
+
+           if (snapshot.connectionState != ConnectionState.done) {
+            return const Center(child: CircularProgressIndicator());
+          }
+
+          if (snapshot.hasError) {
+            final error = snapshot.error as String;
+
+            if (error == 'SERVICE_NOT_ENABLE') {
+              return ErrorSettingsMap(
+                textButton: "Habilitar localização",
+                textError:
+                    "O serviço de localização está desabilitado. Você  precisa habilitar para utilizá-lo",
+                onPressed: () async {
+                  await Geolocator.openLocationSettings();
+                },
+              );
+            }
+
+            if (error == 'PERMISSION_LOCATION_DENIED') {
+              return ErrorSettingsMap(
+                textButton: "Conceder permissão de localização",
+                textError:
+                    "O aplicativo precisa de permissão de localização para funcionar.",
+                onPressed: () async {
+                  final permission = await Geolocator.requestPermission();
+                  if (permission == LocationPermission.deniedForever) {
+                    await Geolocator.openAppSettings();
+                  }
+                },
+              );
+            }
+          }
+
+          return GoogleMap(
+            mapType: MapType.normal,
+            initialCameraPosition: _kGooglePlex,
+            myLocationButtonEnabled: false,
+            myLocationEnabled: true,
+            zoomControlsEnabled: false,
+            style: mapStyle,
+            onMapCreated: (GoogleMapController controller) {
+              _mapController.complete(controller);
+            },
+          );
+        }
+      ),
       bottomNavigationBar: NavigationBarTheme(
         data: NavigationBarThemeData(
           iconTheme: WidgetStateProperty.resolveWith((states) {
