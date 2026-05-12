@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:clone_app_google_maps/pages/home/widget/error_settings_map.widget.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:geolocator/geolocator.dart';
@@ -15,8 +16,6 @@ class HomePage extends StatefulWidget {
 class HomePageState extends State<HomePage> with WidgetsBindingObserver {
   final Completer<GoogleMapController> _mapController =
       Completer<GoogleMapController>();
-
-  CameraPosition? _initialPosition;
 
   late String mapStyle;
 
@@ -43,15 +42,8 @@ class HomePageState extends State<HomePage> with WidgetsBindingObserver {
       zoom: 14,
     );
 
-    _initialPosition = cameraPosition;
-
     return cameraPosition;
   }
-
-  static const CameraPosition _kGooglePlex = CameraPosition(
-    target: LatLng(37.42796133580664, -122.085749655962),
-    zoom: 14.4746,
-  );
 
   @override
   void initState() {
@@ -69,7 +61,11 @@ class HomePageState extends State<HomePage> with WidgetsBindingObserver {
     super.didChangeAppLifecycleState(state);
 
     if (state == AppLifecycleState.resumed) {
-      setState(() {});
+      if (!_mapController.isCompleted) {
+        setState(() {
+          _positionFuture = _determinePosition();
+        });
+      }
     }
   }
 
@@ -83,9 +79,9 @@ class HomePageState extends State<HomePage> with WidgetsBindingObserver {
   Widget build(BuildContext context) {
     return Scaffold(
       body: FutureBuilder(
+        future: _positionFuture,
         builder: (_, snapshot) {
-
-           if (snapshot.connectionState != ConnectionState.done) {
+          if (snapshot.connectionState != ConnectionState.done) {
             return const Center(child: CircularProgressIndicator());
           }
 
@@ -112,6 +108,11 @@ class HomePageState extends State<HomePage> with WidgetsBindingObserver {
                   final permission = await Geolocator.requestPermission();
                   if (permission == LocationPermission.deniedForever) {
                     await Geolocator.openAppSettings();
+                  } else if (permission == LocationPermission.whileInUse ||
+                      permission == LocationPermission.always) {
+                    setState(() {
+                      _positionFuture = _determinePosition();
+                    });
                   }
                 },
               );
@@ -120,7 +121,7 @@ class HomePageState extends State<HomePage> with WidgetsBindingObserver {
 
           return GoogleMap(
             mapType: MapType.normal,
-            initialCameraPosition: _kGooglePlex,
+            initialCameraPosition: snapshot.data!,
             myLocationButtonEnabled: false,
             myLocationEnabled: true,
             zoomControlsEnabled: false,
@@ -129,7 +130,7 @@ class HomePageState extends State<HomePage> with WidgetsBindingObserver {
               _mapController.complete(controller);
             },
           );
-        }
+        },
       ),
       bottomNavigationBar: NavigationBarTheme(
         data: NavigationBarThemeData(
