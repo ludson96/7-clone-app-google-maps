@@ -8,7 +8,7 @@ import GoogleMaps
     _ application: UIApplication,
     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
   ) -> Bool {
-    GMSServices.provideAPIKey("AIzaSyA9QhcuIt71jAKUGDy_jugOx-dhetTJppM")
+    GMSServices.provideAPIKey("SUA_CHAVE_AQUI") // TODO: Obter de variável de ambiente (ex: via flutter_config)
     GeneratedPluginRegistrant.register(with: self)
     return super.application(application, didFinishLaunchingWithOptions: launchOptions)
   }
