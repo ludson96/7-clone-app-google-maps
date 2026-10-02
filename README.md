@@ -4,7 +4,6 @@
 [![Dart 3.10+](https://img.shields.io/badge/Dart-3.10+-0175C2.svg?style=for-the-badge&logo=dart)](https://dart.dev/)
 [![Google Maps](https://img.shields.io/badge/Google_Maps-SDK-4285F4.svg?style=for-the-badge&logo=googlemaps)](https://developers.google.com/maps)
 [![Geolocator](https://img.shields.io/badge/Geolocator-14.0.2-2496ED.svg?style=for-the-badge&logo=google-maps)](https://pub.dev/packages/geolocator)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](LICENSE)
 
 > 🇧🇷 **Português** | 🇺🇸 [**English Version**](README.en.md)
 
